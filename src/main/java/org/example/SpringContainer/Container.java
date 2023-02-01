@@ -77,9 +77,8 @@ public class Container {
 
     private Object createInstance(Class<?> c) throws Exception {
         c = getClassForConstructor(c);
-        if (c == null) {
+        if (c == null)
             throw new ConfigurationException("Missing default interface implementation.");
-        }
 
         Object instance = injectConstructor(c);
         if (instance == null) {
@@ -97,9 +96,8 @@ public class Container {
         extractEvents(o);
         injectFields(o);
 
-        if (o instanceof Initializer) {
+        if (o instanceof Initializer)
             ((Initializer) o).init();
-        }
     }
 
     private void injectFields(Object o) throws Exception {
@@ -171,7 +169,8 @@ public class Container {
 
         Default defaultAnn = c.getAnnotation(Default.class);
         if (defaultAnn == null) {
-            return null;
+            Class<?>[] interfaces = c.getInterfaces();
+            return interfaces.length == 1 ? interfaces[0] : null;
         }
 
         implClass = defaultAnn.value();
