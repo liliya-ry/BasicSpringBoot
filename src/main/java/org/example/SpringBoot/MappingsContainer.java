@@ -17,7 +17,7 @@ public class MappingsContainer {
         for (Class<?> controllerClass : SpringApplication.controllers) {
             RequestMapping requestMappingAnn = controllerClass.getAnnotation(RequestMapping.class);
             String controllerPath = requestMappingAnn.value();
-            Object instance = controllerClass.getDeclaredConstructor(controllerClass).newInstance();
+            Object instance = controllerClass.getConstructor(controllerClass).newInstance();
             for (Method method : controllerClass.getDeclaredMethods()) {
                 allocateMappings(method, controllerPath, instance);
             }

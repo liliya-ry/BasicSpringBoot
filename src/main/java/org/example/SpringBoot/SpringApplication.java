@@ -29,6 +29,7 @@ public class SpringApplication {
         String portStr = appProperties.getProperty("server.port", DEFAULT_TOMCAT_PORT);
         int port = Integer.parseInt(portStr);
         tomcat.setPort(port);
+        tomcat.getConnector();
 
         String contextPath = appProperties.getProperty("server.servlet.context-path", DEFAULT_CONTEXT_PATH);
         Context context = tomcat.addContext(contextPath, null);
@@ -39,6 +40,7 @@ public class SpringApplication {
         context.addServletMappingDecoded("/*", servletName);
 
         tomcat.start();
+        tomcat.getServer().await();
     }
 
     private static void initContext(Class<?> configurationClass) throws Exception {

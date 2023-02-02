@@ -1,5 +1,7 @@
 package org.example.SpringBoot;
 
+import static jakarta.servlet.http.HttpServletResponse.*;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -8,7 +10,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-@WebServlet("/*")
 public class DispatcherServlet extends HttpServlet {
     MappingsContainer mappingsContainer;
 
@@ -32,7 +33,7 @@ public class DispatcherServlet extends HttpServlet {
     private void processRequest(HttpServletRequest request, HttpServletResponse resp, Map<String, RequestMethod> mappingsMap) throws IOException {
         RequestMethod requestMethod = mappingsMap.get(request.getPathInfo());
         if (requestMethod == null) {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            resp.sendError(SC_BAD_REQUEST);
             return;
         }
 
