@@ -1,6 +1,6 @@
 package org.example.SpringBoot;
 
-import org.apache.catalina.Context;
+import org.apache.catalina.*;
 import org.apache.catalina.startup.Tomcat;
 import org.example.SpringContainer.Container;
 import org.example.SpringContainer.annotations.beans.*;
@@ -10,17 +10,34 @@ import java.lang.annotation.*;
 import java.util.*;
 
 public class SpringApplication {
+    private static final String DEFAULT_TOMCAT_PORT = "8080";
+    private static final String DEFAULT_CONTEXT_PATH = "";
+    private static final String APP_PROPERTIES_FILE_NAME = "src/main/java/%s/resources/application.properties";
+    private static final Properties appProperties = new Properties();
+    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class);
     static final Container CONTAINER = new Container();
     static List<Class<?>> controllers = new ArrayList<>();
-    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class);
 
     public static void run(Class<?> configurationClass, String[] arguments) throws Exception {
         initContext(configurationClass);
+        loadProperties(configurationClass.getPackageName());
+        startTomcat();
+    }
+
+    private static void startTomcat() throws LifecycleException {
         Tomcat tomcat = new Tomcat();
-        tomcat.setPort(8082);
-        Context context = tomcat.addContext("/blogApp", null);
-        tomcat.addServlet("/blogApp", DispatcherServlet.class.getSimpleName(), DispatcherServlet.class.toString());
-        context.addServletMappingDecoded("/blogApp/*", DispatcherServlet.class.getSimpleName());
+        String portStr = appProperties.getProperty("server.port", DEFAULT_TOMCAT_PORT);
+        int port = Integer.parseInt(portStr);
+        tomcat.setPort(port);
+
+        String contextPath = appProperties.getProperty("server.servlet.context-path", DEFAULT_CONTEXT_PATH);
+        Context context = tomcat.addContext(contextPath, null);
+
+        String servletName = DispatcherServlet.class.getSimpleName();
+        String servletClass = DispatcherServlet.class.toString();
+        tomcat.addServlet(contextPath, servletName, servletClass);
+        context.addServletMappingDecoded("/*", servletName);
+
         tomcat.start();
     }
 
@@ -76,6 +93,14 @@ public class SpringApplication {
             } catch (ClassNotFoundException e) {
                 throw  new IllegalStateException("Class not found: " + className);
             }
+        }
+    }
+
+    private static void loadProperties(String packageName) throws IOException {
+        packageName = packageName.replace(".", "/");
+        String fileName = String.format(APP_PROPERTIES_FILE_NAME, packageName);
+        try (FileReader fileReader = new FileReader(fileName)) {
+            appProperties.load(fileReader);
         }
     }
 }

@@ -1,18 +1,46 @@
 package org.example.SpringBoot;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
-
+@WebServlet("/*")
 public class DispatcherServlet extends HttpServlet {
-    MappingsContainer mappingsContainer = new MappingsContainer();
+    MappingsContainer mappingsContainer;
+
+    public DispatcherServlet() throws Exception {
+        mappingsContainer = new MappingsContainer();
+    }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println(req.getPathInfo());
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Map<String, RequestMethod> mappingsMap =
+                switch (req.getMethod()) {
+                    case "GET" -> mappingsContainer.getMappings;
+                    case "POST" -> mappingsContainer.postMappings;
+                    case "PUT" -> mappingsContainer.putMappings;
+                    case "DELETE" -> mappingsContainer.deleteMappings;
+                    default -> mappingsContainer.serviceMappings;
+                };
+        processRequest(req, resp, mappingsMap);
+    }
+
+    private void processRequest(HttpServletRequest request, HttpServletResponse resp, Map<String, RequestMethod> mappingsMap) throws IOException {
+        RequestMethod requestMethod = mappingsMap.get(request.getPathInfo());
+        if (requestMethod == null) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        Object result;
+        try {
+            result = requestMethod.invoke();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
