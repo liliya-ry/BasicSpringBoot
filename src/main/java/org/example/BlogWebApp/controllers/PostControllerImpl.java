@@ -17,62 +17,58 @@ import java.util.List;
 @RestController
 @RequestMapping("/posts")
 public class PostControllerImpl {
-    @Autowired
-    private PostMapper postMapper;
-    @Autowired
-    private CommentMapper commentMapper;
-    @Autowired
-    private ObjectMapper objectMapper;
+//    @Autowired
+//    private PostMapper postMapper;
+//    @Autowired
+//    private CommentMapper commentMapper;
+//    @Autowired
+//    private ObjectMapper objectMapper;
 
     @LoggingInfo("Get all posts - %s")
     @GetMapping
     public List<Post> getAllPosts() {
-        return postMapper.getAllPosts();
+        return List.of(new Post(1, 2, "st", "sb"), new Post(2, 2, "st", "sb"));
     }
 
     @GetMapping("/{id}")
     public Object getPostById(@PathVariable Integer id) throws JsonProcessingException {
-        Post post = postMapper.getPostById(id);
-        if (post == null)
-            throwPostException(id, "");
-
-        return post;
+        return new Post(1, 2, "st", "sb");
     }
-
-    @GetMapping("/{id}/comments")
-    public List<Comment> getCommentsByPostId(@PathVariable Integer id) {
-        return commentMapper.getCommentsByPostId(id);
-    }
-
-    @PostMapping
-    public Object createPost(@RequestBody Post post) {
-        postMapper.insertPost(post);
-        return post;
-    }
-
-    @PutMapping("/{id}")
-    public Object updatePost(@RequestBody Post post, @PathVariable Integer id) throws JsonProcessingException {
-        post.id = id;
-
-        int affectedRows = postMapper.updatePost(post);
-        if (affectedRows != 1)
-            throwPostException(id, " was updated");
-
-        return post;
-    }
-
-    @DeleteMapping("/{id}")
-    @ResponseBody
-    public Object deletePost(@PathVariable Integer id) throws JsonProcessingException {
-        int affectedRows = postMapper.deletePost(id);
-        if (affectedRows != 1)
-            throwPostException(id, " was deleted");
-        return id;
-    }
-
-    private void throwPostException(Integer id, String extraText) throws JsonProcessingException {
-        ErrorResponse errorResponse = new ErrorResponse(SC_NOT_FOUND, NO_POST_MESSAGE + id + extraText);
-        String jsonError = objectMapper.writeValueAsString(errorResponse);
-        throw new NotFoundException(jsonError);
-    }
+//
+//    @GetMapping("/{id}/comments")
+//    public List<Comment> getCommentsByPostId(@PathVariable Integer id) {
+//        return commentMapper.getCommentsByPostId(id);
+//    }
+//
+//    @PostMapping
+//    public Object createPost(@RequestBody Post post) {
+//        postMapper.insertPost(post);
+//        return post;
+//    }
+//
+//    @PutMapping("/{id}")
+//    public Object updatePost(@RequestBody Post post, @PathVariable Integer id) throws JsonProcessingException {
+//        post.id = id;
+//
+//        int affectedRows = postMapper.updatePost(post);
+//        if (affectedRows != 1)
+//            throwPostException(id, " was updated");
+//
+//        return post;
+//    }
+//
+//    @DeleteMapping("/{id}")
+//    @ResponseBody
+//    public Object deletePost(@PathVariable Integer id) throws JsonProcessingException {
+//        int affectedRows = postMapper.deletePost(id);
+//        if (affectedRows != 1)
+//            throwPostException(id, " was deleted");
+//        return id;
+//    }
+//
+//    private void throwPostException(Integer id, String extraText) throws JsonProcessingException {
+//        ErrorResponse errorResponse = new ErrorResponse(SC_NOT_FOUND, NO_POST_MESSAGE + id + extraText);
+//        String jsonError = objectMapper.writeValueAsString(errorResponse);
+//        throw new NotFoundException(jsonError);
+//    }
 }

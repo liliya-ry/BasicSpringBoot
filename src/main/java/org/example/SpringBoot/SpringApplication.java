@@ -1,5 +1,7 @@
 package org.example.SpringBoot;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.example.SpringContainer.Container;
 import org.example.SpringContainer.annotations.beans.*;
 
@@ -8,8 +10,6 @@ import org.apache.catalina.*;
 import org.apache.catalina.startup.Tomcat;
 import java.io.*;
 import java.lang.annotation.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 public class SpringApplication {
@@ -17,7 +17,7 @@ public class SpringApplication {
     private static final String DEFAULT_CONTEXT_PATH = "";
     private static final String APP_PROPERTIES_FILE_NAME = "src/main/java/%s/resources/application.properties";
     private static final Properties appProperties = new Properties();
-    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, RestController.class);
+    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, Configuration.class, RestController.class);
     static final Container SPRING_CONTAINER = new Container();
     static List<Class<?>> controllers = new ArrayList<>();
 
@@ -52,6 +52,8 @@ public class SpringApplication {
         List<Class<?>> classesList = new ArrayList<>();
         findAllClasses(configurationClass.getPackageName(), classesList);
         allocateBeans(classesList);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        SPRING_CONTAINER.registerInstance(Gson.class, gson);
     }
 
     private static void allocateBeans(List<Class<?>> classesList) throws Exception {
@@ -86,10 +88,7 @@ public class SpringApplication {
 
     private static void addClasses(String packageName, List<Class<?>> classesList, BufferedReader reader) throws IOException {
         for (String line; (line = reader.readLine()) != null;) {
-            System.out.println(line);
             if (!line.endsWith(".class")) {
-                System.out.println(line);
-                System.out.println(Files.isDirectory(Path.of(line)));
                 findAllClasses(packageName + "." + line, classesList);
                 continue;
             }

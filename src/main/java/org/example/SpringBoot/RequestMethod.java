@@ -5,12 +5,10 @@ import java.lang.reflect.*;
 public class RequestMethod {
     Method method;
     Object controller;
-    Parameter[] params;
 
-    RequestMethod(Method method, Object controller, Parameter[] params) {
+    RequestMethod(Method method, Object controller) {
         this.method = method;
         this.controller = controller;
-        this.params = params;
     }
 
     Object invoke(Object... args) throws InvocationTargetException, IllegalAccessException {

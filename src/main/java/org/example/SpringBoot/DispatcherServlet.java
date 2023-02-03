@@ -1,34 +1,58 @@
 package org.example.SpringBoot;
 
-import static jakarta.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-
+import com.google.gson.Gson;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.example.SpringContainer.annotations.beans.Autowired;
+import org.example.SpringContainer.annotations.web.PathVariable;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static jakarta.servlet.http.HttpServletResponse.*;
 
 public class DispatcherServlet extends HttpServlet {
     @Autowired
     MappingsContainer mappingsContainer;
+    @Autowired
+    Gson gson;
 
     @Override
     public void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println(req.getMethod());
-        System.out.println(req.getPathInfo());
         String key = req.getMethod() + req.getPathInfo();
-        RequestMethod requestMethod = mappingsContainer.requestMappings.get(key);
-        if (requestMethod == null) {
-            resp.sendError(SC_BAD_REQUEST);
-            return;
-        }
+        RequestMethod requestMethod = mappingsContainer.simpleRequestMappings.get(key);
+        if (requestMethod == null)
+            requestMethod = getRequestMethod(key);
 
-        Object result;
+        if (requestMethod == null)
+            resp.setStatus(SC_BAD_REQUEST);
+
         try {
-            result = requestMethod.invoke();
+            for (Parameter parameter : requestMethod.method.getParameters()) {
+                PathVariable pathVariableAnn = parameter.getAnnotation(PathVariable.class);
+                if (pathVariableAnn != null) {
+
+                }
+            }
+            Object result = requestMethod.invoke();
+            String json = gson.toJson(result);
+            resp.getWriter().write(json);
         } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            resp.sendError(SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private RequestMethod getRequestMethod(String key) {
+        for (int i = 0; i < mappingsContainer.requestPatterns.size(); i++) {
+            Pattern requestPattern = mappingsContainer.requestPatterns.get(i);
+            Matcher matcher = requestPattern.matcher(key);
+            if (matcher.matches())
+                return mappingsContainer.requestMethods.get(i);
+
+        }
+        return null;
     }
 }
