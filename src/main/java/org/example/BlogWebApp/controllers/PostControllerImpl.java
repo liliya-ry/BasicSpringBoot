@@ -5,14 +5,18 @@ import static org.example.BlogWebApp.entities.ErrorResponse.NO_POST_MESSAGE;
 
 import org.example.BlogWebApp.entities.*;
 import org.example.BlogWebApp.exceptions.NotFoundException;
+import org.example.BlogWebApp.logging.LoggingInfo;
 import org.example.BlogWebApp.mappers.*;
 import org.example.SpringContainer.annotations.beans.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.SpringContainer.annotations.web.*;
+
 import java.util.List;
 
 @RestController
-public class PostControllerImpl implements PostController {
+@RequestMapping("/posts")
+public class PostControllerImpl {
     @Autowired
     private PostMapper postMapper;
     @Autowired
@@ -20,11 +24,14 @@ public class PostControllerImpl implements PostController {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @LoggingInfo("Get all posts - %s")
+    @GetMapping
     public List<Post> getAllPosts() {
         return postMapper.getAllPosts();
     }
 
-    public Object getPostById(Integer id) throws JsonProcessingException {
+    @GetMapping("/{id}")
+    public Object getPostById(@PathVariable Integer id) throws JsonProcessingException {
         Post post = postMapper.getPostById(id);
         if (post == null)
             throwPostException(id, "");
@@ -32,16 +39,19 @@ public class PostControllerImpl implements PostController {
         return post;
     }
 
-    public List<Comment> getCommentsByPostId(Integer id) {
+    @GetMapping("/{id}/comments")
+    public List<Comment> getCommentsByPostId(@PathVariable Integer id) {
         return commentMapper.getCommentsByPostId(id);
     }
 
-    public Object createPost(Post post) {
+    @PostMapping
+    public Object createPost(@RequestBody Post post) {
         postMapper.insertPost(post);
         return post;
     }
 
-    public Object updatePost(Post post, Integer id) throws JsonProcessingException {
+    @PutMapping("/{id}")
+    public Object updatePost(@RequestBody Post post, @PathVariable Integer id) throws JsonProcessingException {
         post.id = id;
 
         int affectedRows = postMapper.updatePost(post);
@@ -51,7 +61,9 @@ public class PostControllerImpl implements PostController {
         return post;
     }
 
-    public Object deletePost(Integer id) throws JsonProcessingException {
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public Object deletePost(@PathVariable Integer id) throws JsonProcessingException {
         int affectedRows = postMapper.deletePost(id);
         if (affectedRows != 1)
             throwPostException(id, " was deleted");

@@ -76,9 +76,10 @@ public class Container {
     }
 
     private Object createInstance(Class<?> c) throws Exception {
+        System.out.println(c);
         c = getClassForConstructor(c);
         if (c == null)
-            throw new ConfigurationException("Missing default interface implementation.");
+            throw new ConfigurationException("Missing default interface implementation for interface");
 
         Object instance = injectConstructor(c);
         if (instance == null) {

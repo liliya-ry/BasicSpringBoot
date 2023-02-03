@@ -1,12 +1,15 @@
 package org.example.SpringBoot;
 
-import org.apache.catalina.*;
-import org.apache.catalina.startup.Tomcat;
 import org.example.SpringContainer.Container;
 import org.example.SpringContainer.annotations.beans.*;
 
+import jakarta.servlet.http.HttpServlet;
+import org.apache.catalina.*;
+import org.apache.catalina.startup.Tomcat;
 import java.io.*;
 import java.lang.annotation.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class SpringApplication {
@@ -14,18 +17,19 @@ public class SpringApplication {
     private static final String DEFAULT_CONTEXT_PATH = "";
     private static final String APP_PROPERTIES_FILE_NAME = "src/main/java/%s/resources/application.properties";
     private static final Properties appProperties = new Properties();
-    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class);
-    static final Container CONTAINER = new Container();
+    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, RestController.class);
+    static final Container SPRING_CONTAINER = new Container();
     static List<Class<?>> controllers = new ArrayList<>();
 
     public static void run(Class<?> configurationClass, String[] arguments) throws Exception {
-        initContext(configurationClass);
+        setUpSpringContainer(configurationClass);
         loadProperties(configurationClass.getPackageName());
-        startTomcat();
+        Tomcat tomcat = new Tomcat();
+        setUpTomcat(tomcat);
+        tomcat.start();
     }
 
-    private static void startTomcat() throws LifecycleException {
-        Tomcat tomcat = new Tomcat();
+    private static void setUpTomcat(Tomcat tomcat) throws Exception {
         String portStr = appProperties.getProperty("server.port", DEFAULT_TOMCAT_PORT);
         int port = Integer.parseInt(portStr);
         tomcat.setPort(port);
@@ -34,30 +38,32 @@ public class SpringApplication {
         String contextPath = appProperties.getProperty("server.servlet.context-path", DEFAULT_CONTEXT_PATH);
         Context context = tomcat.addContext(contextPath, null);
 
-        String servletName = DispatcherServlet.class.getSimpleName();
-        String servletClass = DispatcherServlet.class.toString();
-        tomcat.addServlet(contextPath, servletName, servletClass);
-        context.addServletMappingDecoded("/*", servletName);
-
-        tomcat.start();
-        tomcat.getServer().await();
+        addDispatcherServlet(tomcat, contextPath, context);
     }
 
-    private static void initContext(Class<?> configurationClass) throws Exception {
+    private static void addDispatcherServlet(Tomcat tomcat, String contextPath, Context context) throws Exception {
+        String servletName = DispatcherServlet.class.getSimpleName();
+        HttpServlet servlet = SPRING_CONTAINER.getInstance(DispatcherServlet.class);
+        tomcat.addServlet(contextPath, servletName, servlet);
+        context.addServletMappingDecoded("/*", servletName);
+    }
+
+    private static void setUpSpringContainer(Class<?> configurationClass) throws Exception {
         List<Class<?>> classesList = new ArrayList<>();
         findAllClasses(configurationClass.getPackageName(), classesList);
+        allocateBeans(classesList);
+    }
+
+    private static void allocateBeans(List<Class<?>> classesList) throws Exception {
         for (Class<?> clazz : classesList) {
             Annotation[] annotations = clazz.getDeclaredAnnotations();
             for (Annotation a : annotations) {
                 if (BEAN_TYPES.contains(a.getClass())) {
-                    CONTAINER.getInstance(a.getClass());
+                    SPRING_CONTAINER.getInstance(a.getClass());
                     continue;
                 }
 
                 if ((a instanceof RestController)) {
-                    Class<?>[] interfaces = clazz.getInterfaces();
-                    if (interfaces.length == 1)
-                        clazz = interfaces[0];
                     controllers.add(clazz);
                 }
             }
@@ -80,7 +86,10 @@ public class SpringApplication {
 
     private static void addClasses(String packageName, List<Class<?>> classesList, BufferedReader reader) throws IOException {
         for (String line; (line = reader.readLine()) != null;) {
+            System.out.println(line);
             if (!line.endsWith(".class")) {
+                System.out.println(line);
+                System.out.println(Files.isDirectory(Path.of(line)));
                 findAllClasses(packageName + "." + line, classesList);
                 continue;
             }
