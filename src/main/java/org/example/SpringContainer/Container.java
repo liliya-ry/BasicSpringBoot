@@ -54,11 +54,11 @@ public class Container {
             throw new ConfigurationException("Instance for " + c.getSimpleName() + " already exists");
         }
 
-        classInstances.put(instance.getClass(), instance);
+        classInstances.put(c, instance);
     }
 
     public void registerInstance(Object instance) throws Exception {
-        registerInstance(instance.getClass(), instance);
+        classInstances.put(instance.getClass(), instance);
     }
 
     public void registerImplementation(Class<?> c, Class<?> subClass) throws Exception {
@@ -169,8 +169,7 @@ public class Container {
 
         Default defaultAnn = c.getAnnotation(Default.class);
         if (defaultAnn == null) {
-            Class<?>[] interfaces = c.getInterfaces();
-            return interfaces.length == 1 ? interfaces[0] : null;
+            return null;
         }
 
         implClass = defaultAnn.value();

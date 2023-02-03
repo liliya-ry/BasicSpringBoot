@@ -1,8 +1,10 @@
 package org.example.BlogWebApp.controllers;
 
+import org.slf4j.*;
+
 //@ControllerAdvice
-public class RestExceptionHandler {//extends ResponseEntityExceptionHandler {
-//    private static final Logger EXCEPTION_LOGGER = LoggerFactory.getLogger(RestExceptionHandler.class);
+public class RestExceptionHandler { // extends ResponseEntityExceptionHandler {
+    private static final Logger EXCEPTION_LOGGER = LoggerFactory.getLogger(RestExceptionHandler.class);
 //
 //    @ExceptionHandler({NotFoundException.class})
 //    protected ResponseEntity<Object> handleNotFound(Exception ex, WebRequest request) {

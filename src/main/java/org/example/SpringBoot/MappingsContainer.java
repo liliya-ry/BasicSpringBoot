@@ -10,20 +10,35 @@ import static org.example.SpringContainer.annotations.web.RequestMethod.*;
 
 public class MappingsContainer {
     private static final String VARIABLE_PATTERN_STR = "\\{\\w+}";
+    private static final String VARIABLE_PATTERN_STR_ESCAPED = "\\\\{\\\\w+}"; //TODO: fix pattern
 
     Map<String, RequestMethod> simpleRequestMappings = new HashMap<>();
     List<Pattern> requestPatterns = new ArrayList<>();
     List<RequestMethod> requestMethods = new ArrayList<>();
 
     public MappingsContainer() throws Exception {
-        for (Class<?> controllerClass : SpringApplication.controllers) {
+        for (Class<?> clazz : SpringApplication.controllers) {
+            Class<?> controllerClass = getControllerClass(clazz);
             RequestMapping requestMappingAnn = controllerClass.getAnnotation(RequestMapping.class);
+
+            if (requestMappingAnn == null)
+                continue;
+
             String controllerPath = requestMappingAnn.value();
-            Object controller = SpringApplication.SPRING_CONTAINER.getInstance(controllerClass);
+
+            Object controller = SpringApplication.SPRING_CONTAINER.getInstance(clazz);
             for (Method method : controllerClass.getDeclaredMethods()) {
                 allocateMappings(method, controllerPath, controller);
             }
         }
+    }
+
+    private Class<?> getControllerClass(Class<?> clazz) {
+        for (Class<?> interfaceClass : clazz.getInterfaces()) {
+            if (interfaceClass.getAnnotation(RequestMapping.class) != null)
+                return interfaceClass;
+        }
+        return clazz;
     }
 
     private void allocateMappings(Method method, String controllerPath, Object instance) {
@@ -43,14 +58,14 @@ public class MappingsContainer {
             if (requestPath == null)
                 continue;
 
-            String regexStr = requestPath.replaceAll(VARIABLE_PATTERN_STR, VARIABLE_PATTERN_STR);
+
+            String regexStr = requestPath.replaceAll(VARIABLE_PATTERN_STR, VARIABLE_PATTERN_STR_ESCAPED);
 
             if (requestPath.equals(regexStr)) {
                 simpleRequestMappings.put(requestPath, requestMethod);
                 continue;
             }
 
-            System.out.println(regexStr);
             Pattern requestPattern = Pattern.compile(regexStr);
             requestPatterns.add(requestPattern);
             requestMethods.add(requestMethod);

@@ -1,7 +1,7 @@
 package org.example.BlogWebApp.entities;
 
 public class ErrorResponse {
-    public static final String NO_POST_MESSAGE = "No post with id ";
+    public static final String NO_POST_MESSAGE = "No post with postId ";
     public static final String NO_USER_MESSAGE = "No post with username ";
     private int code;
     private String message;
