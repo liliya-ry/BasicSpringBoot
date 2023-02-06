@@ -1,12 +1,13 @@
-package org.example.SpringBoot;
+package org.example.SpringBoot.servlet;
 
+import static org.example.SpringContainer.annotations.web.RequestMethod.*;
+
+import org.example.SpringBoot.application.SpringApplication;
 import org.example.SpringContainer.annotations.web.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.Pattern;
-
-import static org.example.SpringContainer.annotations.web.RequestMethod.*;
 
 public class MappingsContainer {
     private static final String VARIABLE_PATTERN_STR = "\\{\\w+}";
@@ -17,7 +18,12 @@ public class MappingsContainer {
     List<RequestMethod> requestMethods = new ArrayList<>();
 
     public MappingsContainer() throws Exception {
-        for (Class<?> clazz : SpringApplication.controllers) {
+        processControllerClasses(SpringApplication.getSpringAdapter().getRestControllers(), true);
+        processControllerClasses(SpringApplication.getSpringAdapter().getControllers(), false);
+    }
+
+    private void processControllerClasses(List<Class<?>> classesList, boolean isRestController) throws Exception {
+        for (Class<?> clazz : classesList) {
             Class<?> controllerClass = getControllerClass(clazz);
             RequestMapping requestMappingAnn = controllerClass.getAnnotation(RequestMapping.class);
 
@@ -26,9 +32,9 @@ public class MappingsContainer {
 
             String controllerPath = requestMappingAnn.value();
 
-            Object controller = SpringApplication.SPRING_CONTAINER.getInstance(clazz);
+            Object controller = SpringApplication.getSpringAdapter().getSpringContainer().getInstance(clazz);
             for (Method method : controllerClass.getDeclaredMethods()) {
-                allocateMappings(method, controllerPath, controller);
+                allocateMappings(method, controllerPath, controller, isRestController);
             }
         }
     }
@@ -41,8 +47,8 @@ public class MappingsContainer {
         return clazz;
     }
 
-    private void allocateMappings(Method method, String controllerPath, Object instance) {
-        RequestMethod requestMethod = new RequestMethod(method, instance);
+    private void allocateMappings(Method method, String controllerPath, Object instance, boolean isRestController) {
+        RequestMethod requestMethod = new RequestMethod(method, instance, isRestController);
         for (Annotation annotation : method.getDeclaredAnnotations()) {
             String annType = annotation.annotationType().getSimpleName();
 

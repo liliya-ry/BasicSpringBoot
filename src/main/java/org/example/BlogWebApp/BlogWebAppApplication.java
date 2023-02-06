@@ -1,7 +1,7 @@
 package org.example.BlogWebApp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.SpringBoot.SpringApplication;
+import org.example.SpringBoot.application.SpringApplication;
 import org.example.SpringBoot.annotations.SpringBootApplication;
 import org.example.SpringContainer.annotations.beans.Bean;
 
