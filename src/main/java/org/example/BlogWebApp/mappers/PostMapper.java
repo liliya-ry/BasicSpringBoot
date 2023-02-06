@@ -6,7 +6,7 @@ import java.util.List;
 
 @Mapper
 public interface PostMapper {
-    @Select("SELECT * FROM POSTS WHERE POST_ID = #{postId}")
+    @Select("SELECT * FROM POSTS WHERE POST_ID = #{id}")
     Post getPostById(@Param("id") Integer id);
 
     @Select("SELECT * FROM POSTS")
@@ -38,6 +38,6 @@ public interface PostMapper {
     @Options(useGeneratedKeys = true, keyProperty = "postId")
     int updatePost(Post post);
 
-    @Delete("DELETE FROM POSTS WHERE POST_ID = #{postId}")
+    @Delete("DELETE FROM POSTS WHERE POST_ID = #{id}")
     int deletePost(@Param("id") Integer id);
 }

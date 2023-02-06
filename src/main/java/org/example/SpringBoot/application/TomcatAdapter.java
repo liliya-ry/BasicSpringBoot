@@ -35,7 +35,7 @@ public class TomcatAdapter {
 
     private static void addDispatcherServlet(Tomcat tomcat, String contextPath, Context context) throws Exception {
         String servletName = DispatcherServlet.class.getSimpleName();
-        HttpServlet servlet = springAdapter.getSpringContainer().getInstance(DispatcherServlet.class);
+        HttpServlet servlet = springAdapter.getSpringContainer().getBean(DispatcherServlet.class);
         tomcat.addServlet(contextPath, servletName, servlet);
         context.addServletMappingDecoded("/*", servletName);
     }

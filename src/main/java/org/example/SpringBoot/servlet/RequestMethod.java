@@ -30,6 +30,7 @@ public class RequestMethod {
             PathVariable pathVariableAnn = params[i].getAnnotation(PathVariable.class);
             if (pathVariableAnn != null) {
                 paramInfos[i].isPathVariable = true;
+                paramInfos[i].requestParamName = params[i].getName();
                 continue;
             }
 

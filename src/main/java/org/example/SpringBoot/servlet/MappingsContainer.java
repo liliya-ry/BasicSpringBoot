@@ -7,14 +7,15 @@ import org.example.SpringContainer.annotations.web.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MappingsContainer {
-    private static final String VARIABLE_PATTERN_STR = "\\{\\w+}";
-    private static final String VARIABLE_PATTERN_STR_ESCAPED = "\\\\{\\\\w+}"; //TODO: fix pattern
+    private static final String VARIABLE_REGEX = "\\{([\\w\\d]+)}";
+    static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE_REGEX);
 
     Map<String, RequestMethod> simpleRequestMappings = new HashMap<>();
-    List<Pattern> requestPatterns = new ArrayList<>();
+    List<PathInfo> pathInfos = new ArrayList<>();
     List<RequestMethod> requestMethods = new ArrayList<>();
 
     public MappingsContainer() throws Exception {
@@ -32,7 +33,7 @@ public class MappingsContainer {
 
             String controllerPath = requestMappingAnn.value();
 
-            Object controller = SpringApplication.getSpringAdapter().getSpringContainer().getInstance(clazz);
+            Object controller = SpringApplication.getSpringAdapter().getSpringContainer().getBean(clazz);
             for (Method method : controllerClass.getDeclaredMethods()) {
                 allocateMappings(method, controllerPath, controller, isRestController);
             }
@@ -51,30 +52,32 @@ public class MappingsContainer {
         RequestMethod requestMethod = new RequestMethod(method, instance, isRestController);
         for (Annotation annotation : method.getDeclaredAnnotations()) {
             String annType = annotation.annotationType().getSimpleName();
-
-            String requestPath = switch (annType) {
-                case "GetMapping" -> GET + controllerPath + ((GetMapping) annotation).value();
-                case "PostMapping" -> POST + controllerPath +((PostMapping) annotation).value();
-                case "PutMapping" -> PUT + controllerPath + ((PutMapping) annotation).value();
-                case "DeleteMapping" -> DELETE + controllerPath + ((DeleteMapping) annotation).value();
-                case "RequestMapping" -> ((RequestMapping) annotation).method() + controllerPath + ((RequestMapping) annotation).value();
-                default -> null;
-            };
+            String requestPath = getRequestPath(controllerPath, annotation, annType);
 
             if (requestPath == null)
                 continue;
 
+            Matcher matcher = VARIABLE_PATTERN.matcher(requestPath);
 
-            String regexStr = requestPath.replaceAll(VARIABLE_PATTERN_STR, VARIABLE_PATTERN_STR_ESCAPED);
-
-            if (requestPath.equals(regexStr)) {
+            if (!matcher.find()) {
                 simpleRequestMappings.put(requestPath, requestMethod);
                 continue;
             }
 
-            Pattern requestPattern = Pattern.compile(regexStr);
-            requestPatterns.add(requestPattern);
+            PathInfo pathInfo = new PathInfo(requestPath);
+            pathInfos.add(pathInfo);
             requestMethods.add(requestMethod);
         }
+    }
+
+    private String getRequestPath(String controllerPath, Annotation annotation, String annType) {
+        return switch (annType) {
+            case "GetMapping" -> GET + controllerPath + ((GetMapping) annotation).value();
+            case "PostMapping" -> POST + controllerPath +((PostMapping) annotation).value();
+            case "PutMapping" -> PUT + controllerPath + ((PutMapping) annotation).value();
+            case "DeleteMapping" -> DELETE + controllerPath + ((DeleteMapping) annotation).value();
+            case "RequestMapping" -> ((RequestMapping) annotation).method() + controllerPath + ((RequestMapping) annotation).value();
+            default -> null;
+        };
     }
 }

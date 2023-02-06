@@ -8,36 +8,36 @@ import org.mockito.Mockito;
 import java.lang.reflect.*;
 import java.util.*;
 
-public class Container {
+public class ApplicationContext {
     private final Map<String, Object> namedInstances = new HashMap<>();
     private final Map<Class<?>, Object> classInstances = new HashMap<>();
     private final Map<Class<?>, Class<?>> implementations = new HashMap<>();
     private Set<Class<?>> visitedClasses = new HashSet<>();
     private ApplicationEventPublisher appEventPublisher;
 
-    public Container() {}
+    public ApplicationContext() {}
 
-    public Container(Properties properties) {
+    public ApplicationContext(Properties properties) {
         properties.forEach((k, v) -> namedInstances.put((String) k, v));
     }
 
-    public Object getInstance(String key) {
+    public Object getBean(String key) {
         return namedInstances.get(key);
     }
 
-    public <T> T getInstance(Class<T> c) throws Exception {
+    public <T> T getBean(Class<T> c) throws Exception {
         T instance = (T) classInstances.get(c);
 
         if (instance == null) {
             visitedClasses.add(c);
-            instance = (T) createInstance(c);
-            registerInstance(c, instance);
+            instance = (T) createBean(c);
+            getBean(c, instance);
         }
 
         return instance;
     }
 
-    public void registerInstance(String key, Object instance) throws Exception {
+    public void getBean(String key, Object instance) throws Exception {
         Object existingInstance = namedInstances.get(key);
 
         if (existingInstance != null) {
@@ -47,7 +47,7 @@ public class Container {
         namedInstances.put(key, instance);
     }
 
-    public void registerInstance(Class<?> c, Object instance) throws Exception {
+    public void getBean(Class<?> c, Object instance) throws Exception {
         Object existingInstance = classInstances.get(c);
 
         if (existingInstance != null) {
@@ -57,7 +57,7 @@ public class Container {
         classInstances.put(c, instance);
     }
 
-    public void registerInstance(Object instance) throws Exception {
+    public void getBean(Object instance) throws Exception {
         classInstances.put(instance.getClass(), instance);
     }
 
@@ -75,7 +75,7 @@ public class Container {
         }
     }
 
-    private Object createInstance(Class<?> c) throws Exception {
+    private Object createBean(Class<?> c) throws Exception {
         c = getClassForConstructor(c);
         if (c == null)
             throw new ConfigurationException("Missing default interface implementation for interface");
@@ -129,7 +129,7 @@ public class Container {
             }
 
             if (qualifierAnn != null) {
-                Object value = getInstance(field.getName());
+                Object value = getBean(field.getName());
                 setFieldValue(field, o, value);
                 continue;
             }
@@ -137,7 +137,7 @@ public class Container {
             Class<?> fieldType = field.getType();
             Object value = visitedClasses.contains(fieldType) ?
                     createMockObject(o, field, qualifierAnn) :
-                    getInstance(fieldType);
+                    getBean(fieldType);
             setFieldValue(field, o, value);
         }
     }
@@ -145,8 +145,8 @@ public class Container {
     private Object createMockObject(Object o, Field field, Qualifier qualifierAnn) {
         return Mockito.mock(field.getType(), invocation -> {
             Object value = qualifierAnn != null ?
-                    getInstance(field.getName()) :
-                    getInstance(field.getType());
+                    getBean(field.getName()) :
+                    getBean(field.getType());
             setFieldValue(field, o, value);
             return invocation.getMethod().invoke(value, invocation.getArguments());
         });
@@ -216,7 +216,7 @@ public class Container {
         for (int i = 0; i < parameters.length; i++) {
             Class<?> parameterType = parameters[i].getType();
             if (isNotWrapperPrimitiveOrString(parameterType)) {
-                values[i] = getInstance(parameterType);
+                values[i] = getBean(parameterType);
                 continue;
             }
 

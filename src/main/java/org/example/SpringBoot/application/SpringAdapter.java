@@ -13,7 +13,7 @@ import java.util.*;
 public class SpringAdapter {
     private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, RestController.class);
 
-    private final Container springContainer = new Container();
+    private final ApplicationContext applicationContext = new ApplicationContext();
     private List<Class<?>> controllers = new ArrayList<>();
     private List<Class<?>> restControllers = new ArrayList<>();
 
@@ -21,7 +21,7 @@ public class SpringAdapter {
         registerMappers(classesList);
         allocateBeans(classesList);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        springContainer.registerInstance(Gson.class, gson);
+        applicationContext.getBean(Gson.class, gson);
     }
 
     public List<Class<?>> getControllers() {
@@ -32,8 +32,8 @@ public class SpringAdapter {
         return restControllers;
     }
 
-    public Container getSpringContainer() {
-        return springContainer;
+    public ApplicationContext getSpringContainer() {
+        return applicationContext;
     }
 
     private void registerMappers(List<Class<?>> classesList) throws Exception {
@@ -44,7 +44,7 @@ public class SpringAdapter {
 
                 myBatisAdapter.configuration.addMapper(clazz);
                 Object mapper = myBatisAdapter.configuration.getMapper(clazz, myBatisAdapter.sqlSession);
-                springContainer.registerInstance(clazz, mapper);
+                applicationContext.getBean(clazz, mapper);
             }
         }
     }
@@ -56,7 +56,7 @@ public class SpringAdapter {
                     continue;
 
                 if (BEAN_TYPES.contains(a.getClass())) {
-                    springContainer.getInstance(clazz);
+                    applicationContext.getBean(clazz);
                 }
 
                 if (a instanceof RestController) {

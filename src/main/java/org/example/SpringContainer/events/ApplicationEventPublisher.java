@@ -1,6 +1,6 @@
 package org.example.SpringContainer.events;
 
-import org.example.SpringContainer.Container;
+import org.example.SpringContainer.ApplicationContext;
 import org.example.SpringContainer.annotations.beans.Async;
 import org.example.SpringContainer.exceptions.ConfigurationException;
 
@@ -13,8 +13,8 @@ public class ApplicationEventPublisher {
     private final Executor pool;
 
 
-    public ApplicationEventPublisher(Container container) throws ConfigurationException {
-        ApplicationEventMulticaster multicaster = (ApplicationEventMulticaster) container.getInstance("applicationEventMulticaster");
+    public ApplicationEventPublisher(ApplicationContext container) throws ConfigurationException {
+        ApplicationEventMulticaster multicaster = (ApplicationEventMulticaster) container.getBean("applicationEventMulticaster");
         if (multicaster == null) {
             throw new ConfigurationException("No bean with name applicationEventMulticaster");
         }

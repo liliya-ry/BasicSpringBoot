@@ -8,7 +8,8 @@ import jakarta.servlet.http.*;
 import org.example.SpringContainer.annotations.beans.Autowired;
 import java.io.IOException;
 import java.lang.reflect.*;
-import java.util.regex.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DispatcherServlet extends HttpServlet {
     @Autowired
@@ -24,11 +25,14 @@ public class DispatcherServlet extends HttpServlet {
             return;
         }
 
-
         String key = method + req.getPathInfo();
+
         RequestMethod requestMethod = mappingsContainer.simpleRequestMappings.get(key);
-        if (requestMethod == null)
-            requestMethod = getRequestMethod(key);
+
+        Map<String, String> pathVariables = new HashMap<>();
+        if (requestMethod == null) {
+            requestMethod = getRequestMethod(key, pathVariables);
+        }
 
         if (requestMethod == null) {
             sendServerError(req, resp);
@@ -36,12 +40,13 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         try {
-            Object[] args = getArgs(req, requestMethod);
+            Object[] args = getArgs(req, requestMethod, pathVariables);
             Object result = requestMethod.invoke(args);
             String responseToWrite = requestMethod.toBeSerialized ? gson.toJson(result) : result.toString();
             resp.getWriter().write(responseToWrite);
         } catch (InvocationTargetException | IllegalAccessException e) {
             sendServerError(req, resp);
+            //TODO: @ControllerAdvice exceptions handling
         }
     }
 
@@ -49,13 +54,14 @@ public class DispatcherServlet extends HttpServlet {
         return method.equals("GET") || method.equals("POST") || method.equals("PUT") || method.equals("DELETE");
     }
 
-    private Object[] getArgs(HttpServletRequest req, RequestMethod requestMethod) throws IOException {
+    private Object[] getArgs(HttpServletRequest req, RequestMethod requestMethod, Map<String, String> pathVariables) throws IOException {
         ParamInfo[] paramInfos = requestMethod.paramInfos;
         Object[] args = new Object[paramInfos.length];
 
         for (int i = 0; i < paramInfos.length; i++) {
             if (paramInfos[i].isPathVariable) {
-                //arg= //TODO fix regex ans extract value
+                String pathVar = pathVariables.get(paramInfos[i].requestParamName);
+                args[i] = getRequestParam(pathVar, paramInfos[i].type);
                 continue;
             }
 
@@ -67,27 +73,44 @@ public class DispatcherServlet extends HttpServlet {
             }
 
             if (paramInfos[i].requestParamName != null) {
-                args[i] = getRequestParam(req, paramInfos[i]);
+                String requestParam = req.getParameter(paramInfos[i].requestParamName);
+                args[i] = getRequestParam(requestParam, paramInfos[i].type);
             }
         }
 
         return args;
     }
 
-    private RequestMethod getRequestMethod(String key) {
-        for (int i = 0; i < mappingsContainer.requestPatterns.size(); i++) {
-            Pattern requestPattern = mappingsContainer.requestPatterns.get(i);
-            Matcher matcher = requestPattern.matcher(key);
-            if (matcher.matches()) {
-                return mappingsContainer.requestMethods.get(i);
+    private RequestMethod getRequestMethod(String key, Map<String, String> pathVariables) {
+        for (int i = 0; i < mappingsContainer.pathInfos.size(); i++) {
+            PathInfo pathInfo = mappingsContainer.pathInfos.get(i);
+            String[] pathParts = key.split("/");
+
+            if (pathParts.length != pathInfo.pathParts.length)
+                continue;
+
+            boolean matchesPathInfo = true;
+            for (int j = 0; j < pathParts.length; j++) {
+                if (pathParts[j].equals(pathInfo.pathParts[j]))
+                    continue;
+
+                if (pathInfo.paramNames[j] == null) {
+                    matchesPathInfo = false;
+                    break;
+                }
+
+                pathVariables.put(pathInfo.paramNames[j], pathParts[j]);
             }
+
+            if (matchesPathInfo)
+                return  mappingsContainer.requestMethods.get(i);
         }
+
         return null;
     }
 
-    private Object getRequestParam(HttpServletRequest req, ParamInfo paramInfo) {
-        String requestParam = req.getParameter(paramInfo.requestParamName);
-        return switch (paramInfo.type.getSimpleName()) {
+    private Object getRequestParam(String requestParam, Class<?> paramType) {
+        return switch (paramType.getSimpleName()) {
             case "Integer", "int" -> Integer.parseInt(requestParam);
             case "Double", "double" -> Double.parseDouble(requestParam);
             case "Float", "float" -> Float.parseFloat(requestParam);
