@@ -1,10 +1,12 @@
 package org.example.SpringBoot.servlet;
 
+import org.example.SpringBoot.interceptors.HandlerMethod;
 import org.example.SpringContainer.annotations.web.*;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 
-public class RequestMethod {
+public class RequestMethod implements HandlerMethod {
     Method method;
     Object controller;
     ParamInfo[] paramInfos;
@@ -45,5 +47,10 @@ public class RequestMethod {
                 paramInfos[i].requestParamName = params[i].getName();
             }
         }
+    }
+
+    @Override
+    public Annotation getMethodAnnotation(Class annotationType) {
+        return method.getAnnotation(annotationType);
     }
 }

@@ -1,5 +1,7 @@
 package org.example.SpringBoot.interceptors;
 
+import java.lang.annotation.Annotation;
+
 public interface HandlerMethod {
-    Object getMethodAnnotation(Class<?> annotationType);
+    Annotation getMethodAnnotation(Class annotationType);
 }

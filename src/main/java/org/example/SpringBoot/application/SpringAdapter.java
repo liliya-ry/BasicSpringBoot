@@ -4,6 +4,9 @@ import static org.example.SpringBoot.application.SpringApplication.*;
 
 import com.google.gson.*;
 import org.apache.ibatis.annotations.*;
+import org.example.BlogWebApp.InterceptorsConfig;
+import org.example.SpringBoot.interceptors.InterceptorRegistry;
+import org.example.SpringBoot.webMvc.WebMvcConfigurer;
 import org.example.SpringContainer.*;
 import org.example.SpringContainer.annotations.beans.*;
 
@@ -57,6 +60,13 @@ public class SpringAdapter {
 
                 if (BEAN_TYPES.contains(a.getClass())) {
                     applicationContext.getBean(clazz);
+                }
+
+                if (clazz.equals(InterceptorsConfig.class)) {
+                    InterceptorRegistry registry = new InterceptorRegistry();
+                    clazz.getDeclaredMethods()[0].invoke(applicationContext.getBean(clazz), registry);
+                    applicationContext.getBean(InterceptorRegistry.class, registry);
+                    continue;
                 }
 
                 if (a instanceof RestController) {

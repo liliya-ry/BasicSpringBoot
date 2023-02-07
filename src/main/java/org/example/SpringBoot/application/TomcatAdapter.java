@@ -6,7 +6,10 @@ import jakarta.servlet.http.HttpServlet;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.example.SpringBoot.servlet.DispatcherServlet;
+import org.example.SpringBoot.servlet.InterceptorFilter;
 
 import java.util.Properties;
 
@@ -31,6 +34,20 @@ public class TomcatAdapter {
         Context context = tomcat.addContext(contextPath, null);
 
         addDispatcherServlet(tomcat, contextPath, context);
+        addInterceptorFilter(context);
+    }
+
+    private void addInterceptorFilter(Context context) throws Exception {
+        String filterName = InterceptorFilter.class.getSimpleName();
+        FilterDef filterDef = new FilterDef();
+        filterDef.setFilter(springAdapter.getSpringContainer().getBean(InterceptorFilter.class));
+        filterDef.setFilterName(filterName);
+        context.addFilterDef(filterDef);
+
+        FilterMap filterMap = new FilterMap();
+        filterMap.setFilterName(filterName);
+        filterMap.addURLPattern("/*");
+        context.addFilterMap(filterMap);
     }
 
     private static void addDispatcherServlet(Tomcat tomcat, String contextPath, Context context) throws Exception {

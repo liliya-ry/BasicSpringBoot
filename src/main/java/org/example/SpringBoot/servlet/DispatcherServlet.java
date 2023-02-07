@@ -25,14 +25,7 @@ public class DispatcherServlet extends HttpServlet {
             return;
         }
 
-        String key = method + req.getPathInfo();
-
-        RequestMethod requestMethod = mappingsContainer.simpleRequestMappings.get(key);
-
-        Map<String, String> pathVariables = new HashMap<>();
-        if (requestMethod == null) {
-            requestMethod = getRequestMethod(key, pathVariables);
-        }
+        RequestMethod requestMethod = (RequestMethod) req.getAttribute("requestMethod");
 
         if (requestMethod == null) {
             sendServerError(req, resp);
@@ -40,7 +33,7 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         try {
-            Object[] args = getArgs(req, requestMethod, pathVariables);
+            Object[] args = getArgs(req, requestMethod);
             Object result = requestMethod.invoke(args);
             String responseToWrite = requestMethod.toBeSerialized ? gson.toJson(result) : result.toString();
             resp.getWriter().write(responseToWrite);
@@ -54,13 +47,13 @@ public class DispatcherServlet extends HttpServlet {
         return method.equals("GET") || method.equals("POST") || method.equals("PUT") || method.equals("DELETE");
     }
 
-    private Object[] getArgs(HttpServletRequest req, RequestMethod requestMethod, Map<String, String> pathVariables) throws IOException {
+    private Object[] getArgs(HttpServletRequest req, RequestMethod requestMethod) throws IOException {
         ParamInfo[] paramInfos = requestMethod.paramInfos;
         Object[] args = new Object[paramInfos.length];
 
         for (int i = 0; i < paramInfos.length; i++) {
             if (paramInfos[i].isPathVariable) {
-                String pathVar = pathVariables.get(paramInfos[i].requestParamName);
+                String pathVar = (String) req.getAttribute(paramInfos[i].requestParamName);
                 args[i] = getRequestParam(pathVar, paramInfos[i].type);
                 continue;
             }
@@ -79,34 +72,6 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         return args;
-    }
-
-    private RequestMethod getRequestMethod(String key, Map<String, String> pathVariables) {
-        for (int i = 0; i < mappingsContainer.pathInfos.size(); i++) {
-            PathInfo pathInfo = mappingsContainer.pathInfos.get(i);
-            String[] pathParts = key.split("/");
-
-            if (pathParts.length != pathInfo.pathParts.length)
-                continue;
-
-            boolean matchesPathInfo = true;
-            for (int j = 0; j < pathParts.length; j++) {
-                if (pathParts[j].equals(pathInfo.pathParts[j]))
-                    continue;
-
-                if (pathInfo.paramNames[j] == null) {
-                    matchesPathInfo = false;
-                    break;
-                }
-
-                pathVariables.put(pathInfo.paramNames[j], pathParts[j]);
-            }
-
-            if (matchesPathInfo)
-                return  mappingsContainer.requestMethods.get(i);
-        }
-
-        return null;
     }
 
     private Object getRequestParam(String requestParam, Class<?> paramType) {
