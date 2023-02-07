@@ -10,14 +10,14 @@ import java.util.Properties;
 
 public class MyBatisAdapter {
     Configuration configuration;
-    SqlSession sqlSession;
+    SqlSessionFactory sqlSessionFactory;
 
     MyBatisAdapter(Properties appProperties) {
         DataSource dataSource = createDataSource(appProperties);
         Environment environment = new Environment("Development", new JdbcTransactionFactory(), dataSource);
         configuration = new Configuration(environment);
         configuration.setMapUnderscoreToCamelCase(true);
-        createSession();
+        createSessionFactory();
     }
 
     private DataSource createDataSource(Properties appProperties) {
@@ -28,9 +28,8 @@ public class MyBatisAdapter {
         return new PooledDataSource(driver, url, username, password);
     }
 
-    private void createSession() {
+    private void createSessionFactory() {
         SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
-        SqlSessionFactory sqlSessionFactory = builder.build(configuration);
-        sqlSession = sqlSessionFactory.openSession();
+        sqlSessionFactory = builder.build(configuration);
     }
 }

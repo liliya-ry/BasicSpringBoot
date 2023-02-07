@@ -14,12 +14,12 @@ public class SpringAdapter {
     private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, RestController.class);
 
     private final ApplicationContext applicationContext = new ApplicationContext();
-    private List<Class<?>> controllers = new ArrayList<>();
-    private List<Class<?>> restControllers = new ArrayList<>();
+    private final List<Class<?>> controllers = new ArrayList<>();
+    private final List<Class<?>> restControllers = new ArrayList<>();
 
-    SpringAdapter(List<Class<?>> classesList) throws Exception {
-        registerMappers(classesList);
-        allocateBeans(classesList);
+    SpringAdapter(Set<Class<?>> classesSet) throws Exception {
+        registerMappers(classesSet);
+        allocateBeans(classesSet);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         applicationContext.getBean(Gson.class, gson);
     }
@@ -36,21 +36,21 @@ public class SpringAdapter {
         return applicationContext;
     }
 
-    private void registerMappers(List<Class<?>> classesList) throws Exception {
-        for (Class<?> clazz : classesList) {
+    private void registerMappers(Set<Class<?>> classesSet) throws Exception {
+        for (Class<?> clazz : classesSet) {
             for (Annotation a : clazz.getDeclaredAnnotations()) {
                 if (!(a instanceof Mapper))
                     continue;
 
                 myBatisAdapter.configuration.addMapper(clazz);
-                Object mapper = myBatisAdapter.configuration.getMapper(clazz, myBatisAdapter.sqlSession);
+                Object mapper = myBatisAdapter.configuration.getMapper(clazz, myBatisAdapter.sqlSessionFactory.openSession());
                 applicationContext.getBean(clazz, mapper);
             }
         }
     }
 
-    private void allocateBeans(List<Class<?>> classesList) throws Exception {
-        for (Class<?> clazz : classesList) {
+    private void allocateBeans(Set<Class<?>> classesSet) throws Exception {
+        for (Class<?> clazz : classesSet) {
             for (Annotation a : clazz.getDeclaredAnnotations()) {
                 if (a instanceof Mapper)
                     continue;
