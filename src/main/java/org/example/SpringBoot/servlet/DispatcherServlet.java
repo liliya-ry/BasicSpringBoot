@@ -5,69 +5,58 @@ import static jakarta.servlet.http.HttpServletResponse.*;
 import com.google.gson.Gson;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import org.example.SpringBoot.servlet.errors.ServerError;
 import org.example.SpringContainer.annotations.beans.Autowired;
 import java.io.IOException;
 import java.lang.reflect.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class DispatcherServlet extends HttpServlet {
-    @Autowired
-    MappingsContainer mappingsContainer;
     @Autowired
     Gson gson;
 
     @Override
     public void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String method = req.getMethod();
-        if (!isMethodSupported(method)) {
-            sendNotSupportedError(req, resp);
-            return;
-        }
-
         RequestMethod requestMethod = (RequestMethod) req.getAttribute("requestMethod");
-
-        if (requestMethod == null) {
-            sendServerError(req, resp);
-            return;
-        }
 
         try {
             Object[] args = getArgs(req, requestMethod);
             Object result = requestMethod.invoke(args);
-            String responseToWrite = requestMethod.toBeSerialized ? gson.toJson(result) : result.toString();
+            String responseToWrite = result.toString();
+            if (requestMethod.toBeSerialized) {
+                responseToWrite = gson.toJson(result);
+                resp.setContentType("application/json");
+            }
             resp.getWriter().write(responseToWrite);
         } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
             sendServerError(req, resp);
             //TODO: @ControllerAdvice exceptions handling
         }
     }
 
-    private boolean isMethodSupported(String method) {
-        return method.equals("GET") || method.equals("POST") || method.equals("PUT") || method.equals("DELETE");
-    }
-
     private Object[] getArgs(HttpServletRequest req, RequestMethod requestMethod) throws IOException {
-        ParamInfo[] paramInfos = requestMethod.paramInfos;
-        Object[] args = new Object[paramInfos.length];
+        List<ParamInfo> paramInfos = requestMethod.paramInfos;
+        Object[] args = new Object[paramInfos.size()];
 
-        for (int i = 0; i < paramInfos.length; i++) {
-            if (paramInfos[i].isPathVariable) {
-                String pathVar = (String) req.getAttribute(paramInfos[i].requestParamName);
-                args[i] = getRequestParam(pathVar, paramInfos[i].type);
+        for (int i = 0; i < paramInfos.size(); i++) {
+            ParamInfo paramInfo = paramInfos.get(i);
+            if (paramInfo.isPathVariable) {
+                String pathVar = (String) req.getAttribute(paramInfo.requestParamName);
+                args[i] = getRequestParam(pathVar, paramInfo.type);
                 continue;
             }
 
-            if (paramInfos[i].isFromRequestBody) {
+            if (paramInfo.isFromRequestBody) {
                 args[i] = requestMethod.toBeSerialized ?
-                          gson.fromJson(req.getReader(), paramInfos[i].type) :
+                          gson.fromJson(req.getReader(), paramInfo.type) :
                           new String(req.getInputStream().readAllBytes());
                 continue;
             }
 
-            if (paramInfos[i].requestParamName != null) {
-                String requestParam = req.getParameter(paramInfos[i].requestParamName);
-                args[i] = getRequestParam(requestParam, paramInfos[i].type);
+            if (paramInfo.requestParamName != null) {
+                String requestParam = req.getParameter(paramInfo.requestParamName);
+                args[i] = getRequestParam(requestParam, paramInfo.type);
             }
         }
 
@@ -93,13 +82,9 @@ public class DispatcherServlet extends HttpServlet {
         sendError(serverError, resp, SC_INTERNAL_SERVER_ERROR);
     }
 
-    private void sendNotSupportedError(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Object notSupportedError = new NotSupportedError(req.getMethod(), req.getPathInfo());
-        sendError(notSupportedError, resp, SC_METHOD_NOT_ALLOWED);
-    }
-
     private void sendError(Object error, HttpServletResponse resp, int status) throws IOException {
         resp.setStatus(status);
+        resp.setContentType("application/json");
         String responseToWrite = gson.toJson(error);
         resp.getWriter().write(responseToWrite);
     }

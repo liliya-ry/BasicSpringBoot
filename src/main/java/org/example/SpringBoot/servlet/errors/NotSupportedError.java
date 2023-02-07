@@ -1,12 +1,5 @@
-package org.example.SpringBoot.servlet;
-/*{
-    "type": "about:blank",
-    "title": "Method Not Allowed",
-    "status": 405,
-    "detail": "Method 'POST' is not supported.",
-    "instance": "/blogApp/comments",
-    "properties": null
-}*/
+package org.example.SpringBoot.servlet.errors;
+
 public class NotSupportedError {
     private static  final String DEFAULT_TITLE = "Method Not Allowed";
     private static final int DEFAULT_STATUS = 405;

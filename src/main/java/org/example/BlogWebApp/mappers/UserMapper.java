@@ -33,7 +33,7 @@ public interface UserMapper {
         #{role}
     )
     """)
-    @Options(useGeneratedKeys = true, keyProperty = "username")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
     void insertUser(User user);
 
     @Update("""

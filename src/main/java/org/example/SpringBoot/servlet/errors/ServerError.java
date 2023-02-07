@@ -1,4 +1,4 @@
-package org.example.SpringBoot.servlet;
+package org.example.SpringBoot.servlet.errors;
 
 public class ServerError {
     private static  final String DEFAULT_ERROR = "Internal Server Error";

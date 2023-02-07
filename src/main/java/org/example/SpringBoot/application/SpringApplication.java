@@ -1,6 +1,7 @@
 package org.example.SpringBoot.application;
 
 import org.example.SpringBoot.annotations.*;
+import org.example.SpringContainer.ApplicationContext;
 import org.example.SpringContainer.annotations.beans.*;
 
 import java.io.*;
@@ -8,22 +9,28 @@ import java.util.*;
 
 public class SpringApplication {
     private static final String APP_PROPERTIES_FILE_NAME = "src/main/java/%s/resources/application.properties";
-    private static final Properties appProperties = new Properties();
-
-    static Set<Class<?>> classesList = new HashSet<>();
-    static SpringAdapter springAdapter;
-    static MyBatisAdapter myBatisAdapter;
+    private static final Properties APP_PROPERTIES = new Properties();
+    private static final ApplicationContext APP_CONTEXT = new ApplicationContext();
+    private static final Set<Class<?>> CLASSES_SET = new HashSet<>();
 
     public static void run(Class<?> configurationClass, String[] arguments) throws Exception {
         Set<String> packages = findPackages(configurationClass);
         for (String packageName : packages)
-            findAllClasses(packageName, classesList);
+            findAllClasses(packageName, CLASSES_SET);
+
         loadProperties(configurationClass.getPackageName());
 
-        myBatisAdapter = new MyBatisAdapter(appProperties);
-        springAdapter = new SpringAdapter(classesList);
+        MyBatisAdapter myBatisAdapter = new MyBatisAdapter(APP_PROPERTIES);
+        myBatisAdapter.registerMappers(APP_CONTEXT, CLASSES_SET);
 
-        TomcatAdapter tomcatAdapter = new TomcatAdapter(appProperties);
+        SpringInjector springInjector = new SpringInjector();
+        springInjector.registerGson(APP_CONTEXT);
+        springInjector.allocateBeans(APP_CONTEXT, CLASSES_SET);
+
+        ControllersDispatcher controllerDispatcher = new ControllersDispatcher(CLASSES_SET, APP_CONTEXT);
+        APP_CONTEXT.getBean(ControllersDispatcher.class, controllerDispatcher);
+
+        TomcatAdapter tomcatAdapter = new TomcatAdapter(APP_PROPERTIES, APP_CONTEXT);
         tomcatAdapter.startServer();
     }
 
@@ -58,7 +65,7 @@ public class SpringApplication {
         packageName = packageName.replace(".", "/");
         String fileName = String.format(APP_PROPERTIES_FILE_NAME, packageName);
         try (FileReader fileReader = new FileReader(fileName)) {
-            appProperties.load(fileReader);
+            APP_PROPERTIES.load(fileReader);
         }
     }
 
@@ -90,13 +97,11 @@ public class SpringApplication {
             try {
                 Class<?> clazz = Class.forName(className);
                 classesSet.add(clazz);
-            } catch (ClassNotFoundException e) {
-                throw  new IllegalStateException("Class not found: " + className);
-            }
+            } catch (ClassNotFoundException ignored) {}
         }
     }
 
-    public static SpringAdapter getSpringAdapter() {
-        return springAdapter;
+    public static ApplicationContext getAppContext() {
+        return APP_CONTEXT;
     }
 }

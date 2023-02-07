@@ -5,18 +5,22 @@ import org.example.SpringContainer.annotations.web.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RequestMethod implements HandlerMethod {
     Method method;
     Object controller;
-    ParamInfo[] paramInfos;
+    List<ParamInfo> paramInfos;
+    String methodType;
     boolean toBeSerialized;
 
-    RequestMethod(Method method, Object controller, boolean isRestController) {
+    RequestMethod(Method method, Object controller, boolean isRestController, String methodType) {
         this.method = method;
         this.controller = controller;
         processParams();
         toBeSerialized = isRestController || method.getAnnotation(ResponseBody.class) != null;
+        this.methodType = methodType;
     }
 
     Object invoke(Object... args) throws InvocationTargetException, IllegalAccessException {
@@ -25,27 +29,25 @@ public class RequestMethod implements HandlerMethod {
 
     private void processParams() {
         Parameter[] params = method.getParameters();
-        paramInfos = new ParamInfo[params.length];
-        for (int i = 0; i < params.length; i++) {
-            paramInfos[i] = new ParamInfo(params[i].getType());
+        paramInfos = new ArrayList<>(params.length);
 
-            PathVariable pathVariableAnn = params[i].getAnnotation(PathVariable.class);
-            if (pathVariableAnn != null) {
-                paramInfos[i].isPathVariable = true;
-                paramInfos[i].requestParamName = params[i].getName();
-                continue;
+        for (Parameter param : params) {
+            ParamInfo paramInfo = new ParamInfo(param.getType());
+
+            if (param.isAnnotationPresent(PathVariable.class)) {
+                paramInfo.isPathVariable = true;
+                paramInfo.requestParamName = param.getName();
             }
 
-            RequestBody requestBodyAnn = params[i].getAnnotation(RequestBody.class);
-            if (requestBodyAnn != null) {
-                paramInfos[i].isFromRequestBody = true;
-                continue;
+            if (param.isAnnotationPresent(RequestBody.class)) {
+                paramInfo.isFromRequestBody = true;
             }
 
-            RequestParam requestParamAnn = params[i].getAnnotation(RequestParam.class);
-            if (requestParamAnn != null) {
-                paramInfos[i].requestParamName = params[i].getName();
+            if (param.isAnnotationPresent(RequestParam.class)) {
+                paramInfo.requestParamName = param.getName();
             }
+
+            paramInfos.add(paramInfo);
         }
     }
 

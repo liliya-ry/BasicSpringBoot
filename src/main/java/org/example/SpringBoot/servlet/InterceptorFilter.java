@@ -1,17 +1,21 @@
 package org.example.SpringBoot.servlet;
 
+import static jakarta.servlet.http.HttpServletResponse.*;
+
+import com.google.gson.Gson;
 import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.example.SpringBoot.interceptors.HandlerInterceptor;
-import org.example.SpringBoot.interceptors.InterceptorRegistry;
+import jakarta.servlet.http.*;
+import org.example.SpringBoot.interceptors.*;
+import org.example.SpringBoot.servlet.errors.NotSupportedError;
+import org.example.SpringBoot.servlet.errors.ServerError;
 import org.example.SpringContainer.annotations.beans.Autowired;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 public class InterceptorFilter implements Filter {
+    @Autowired
+    Gson gson;
     @Autowired
     InterceptorRegistry interceptorRegistry;
     @Autowired
@@ -22,51 +26,88 @@ public class InterceptorFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
         HttpServletResponse response = (HttpServletResponse)servletResponse;
 
-        String key = request.getMethod() + request.getPathInfo();
+        String requestPath = request.getMethod() + request.getPathInfo();
+        RequestMethod requestMethod = getRequestMethod(requestPath, request);
 
-        RequestMethod requestMethod = mappingsContainer.simpleRequestMappings.get(key);
-
-        Map<String, String> pathVariables = new HashMap<>();
         if (requestMethod == null) {
-            requestMethod = getRequestMethod(key, pathVariables);
-        }
-
-        boolean doInvoke = true;
-        for (HandlerInterceptor interceptor : interceptorRegistry.getInterceptors()) {
-            doInvoke = interceptor.preHandle(request, response, requestMethod);
-            if (!doInvoke)
-                break;
-        }
-
-        if (!doInvoke)
+            sendMissingRequestMethodError(request, response);
             return;
+        }
+
+        request.setAttribute("requestMethod", requestMethod);
+        boolean doInvoke = invokePreHandleMethods(request, response, requestMethod);
+
+        if (!doInvoke) {
+            sendServerError(request, response);
+            return;
+        }
 
         Exception ex = null;
         try {
-            request.setAttribute("requestMethod", requestMethod);
-            for (Map.Entry<String, String> pathVarEntry : pathVariables.entrySet()) {
-                request.setAttribute(pathVarEntry.getKey(), pathVarEntry.getValue());
-            }
             filterChain.doFilter(servletRequest, servletResponse);
         } catch (Exception e) {
             ex = e;
         }
 
-        for (HandlerInterceptor interceptor : interceptorRegistry.getInterceptors()) {
-            interceptor.afterCompletion((HttpServletRequest) servletRequest, (HttpServletResponse) servletResponse, requestMethod, ex);
+        invokeAfterCompletionMethods(request, response, requestMethod, ex);
+    }
+
+    private void sendMissingRequestMethodError(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        boolean isNotSupported = (boolean) request.getAttribute("methodNotSupported");
+        if (isNotSupported) {
+            sendNotSupportedError(request, response);
+        } else {
+            sendServerError(request, response);
         }
     }
 
-    private RequestMethod getRequestMethod(String key, Map<String, String> pathVariables) {
+    private void invokeAfterCompletionMethods(HttpServletRequest request, HttpServletResponse response, RequestMethod requestMethod, Exception ex) {
+        for (HandlerInterceptor interceptor : interceptorRegistry.getInterceptors()) {
+            boolean isPathExcluded = interceptor.getExcludedPaths().contains(request.getPathInfo());
+            if (isPathExcluded)
+                continue;
+
+            interceptor.afterCompletion(request, response, requestMethod, ex);
+        }
+    }
+
+    private boolean invokePreHandleMethods(HttpServletRequest request, HttpServletResponse response, RequestMethod requestMethod) {
+        boolean doInvoke = true;
+        for (HandlerInterceptor interceptor : interceptorRegistry.getInterceptors()) {
+            if (!doInvoke)
+                continue;
+
+            boolean isPathExcluded = interceptor.getExcludedPaths().contains(request.getPathInfo());
+            if (isPathExcluded)
+                continue;
+
+            doInvoke = interceptor.preHandle(request, response, requestMethod);
+        }
+        return doInvoke;
+    }
+
+    private RequestMethod getRequestMethod(String requestPath, HttpServletRequest request) {
+        List<RequestMethod> requestMethodList = new ArrayList<>();
+        getAllMatchingMethods(requestPath, request, requestMethodList);
+
+        for (RequestMethod requestMethod : requestMethodList)
+            if (request.getMethod().equals(requestMethod.methodType))
+                return requestMethod;
+
+        request.setAttribute("methodNotSupported", true);
+        return null;
+    }
+
+    private void getAllMatchingMethods(String requestPath, HttpServletRequest request, List<RequestMethod> requestMethodList) {
         for (int i = 0; i < mappingsContainer.pathInfos.size(); i++) {
             PathInfo pathInfo = mappingsContainer.pathInfos.get(i);
-            String[] pathParts = key.split("/");
+            String[] pathParts = requestPath.split("/");
 
             if (pathParts.length != pathInfo.pathParts.length)
                 continue;
 
             boolean matchesPathInfo = true;
-            for (int j = 0; j < pathParts.length; j++) {
+            for (int j = 1; j < pathParts.length; j++) {
                 if (pathParts[j].equals(pathInfo.pathParts[j]))
                     continue;
 
@@ -75,13 +116,30 @@ public class InterceptorFilter implements Filter {
                     break;
                 }
 
-                pathVariables.put(pathInfo.paramNames[j], pathParts[j]);
+                request.setAttribute(pathInfo.paramNames[j], pathParts[j]);
             }
 
-            if (matchesPathInfo)
-                return  mappingsContainer.requestMethods.get(i);
+            if (matchesPathInfo) {
+                RequestMethod requestMethod = mappingsContainer.requestMethods.get(i);
+                requestMethodList.add(requestMethod);
+            }
         }
+    }
 
-        return null;
+    private void sendServerError(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        Object serverError = new ServerError(req.getPathInfo());
+        sendError(serverError, resp, SC_INTERNAL_SERVER_ERROR);
+    }
+
+    private void sendNotSupportedError(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        Object notSupportedError = new NotSupportedError(req.getMethod(), req.getPathInfo());
+        sendError(notSupportedError, resp, SC_METHOD_NOT_ALLOWED);
+    }
+
+    private void sendError(Object error, HttpServletResponse resp, int status) throws IOException {
+        resp.setStatus(status);
+        resp.setContentType("application/json");
+        String responseToWrite = gson.toJson(error);
+        resp.getWriter().write(responseToWrite);
     }
 }

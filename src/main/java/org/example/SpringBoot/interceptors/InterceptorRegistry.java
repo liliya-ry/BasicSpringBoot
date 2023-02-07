@@ -1,21 +1,16 @@
 package org.example.SpringBoot.interceptors;
 
-import org.example.BlogWebApp.auth.AuthInterceptor;
 import org.example.SpringContainer.annotations.beans.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Component
 public class InterceptorRegistry {
     private final List<HandlerInterceptor> interceptors = new ArrayList<>();
 
-    public InterceptorRegistry addInterceptor(HandlerInterceptor interceptor) {
+    public HandlerInterceptor addInterceptor(HandlerInterceptor interceptor) {
         interceptors.add(interceptor);
-        return this;
-    }
-
-    public void excludePathPatterns(String s) {
+        return interceptor;
     }
 
     public List<HandlerInterceptor> getInterceptors() {

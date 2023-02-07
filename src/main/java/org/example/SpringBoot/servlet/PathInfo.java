@@ -1,10 +1,9 @@
 package org.example.SpringBoot.servlet;
 
-import java.util.regex.Matcher;
-
-import static org.example.SpringBoot.servlet.MappingsContainer.*;
+import java.util.regex.*;
 
 public class PathInfo {
+    static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{([\\w\\d]+)}");
     String[] pathParts;
     String[] paramNames;
 
@@ -16,5 +15,9 @@ public class PathInfo {
             Matcher matcher = VARIABLE_PATTERN.matcher(pathParts[i]);
             paramNames[i] = matcher.find() ? matcher.group(1) : null;
         }
+    }
+
+    String getMethodType() {
+        return pathParts[0];
     }
 }

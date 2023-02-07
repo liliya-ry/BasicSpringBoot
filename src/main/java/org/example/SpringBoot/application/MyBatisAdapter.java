@@ -1,23 +1,31 @@
 package org.example.SpringBoot.application;
 
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.datasource.pooled.*;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.*;
 import org.apache.ibatis.transaction.jdbc.*;
+import org.example.SpringContainer.ApplicationContext;
 
 import javax.sql.DataSource;
-import java.util.Properties;
+import java.lang.annotation.Annotation;
+import java.util.*;
 
 public class MyBatisAdapter {
-    Configuration configuration;
-    SqlSessionFactory sqlSessionFactory;
+    private final Configuration myBatisConfig;
+    private final SqlSessionFactory sqlSessionFactory;
 
-    MyBatisAdapter(Properties appProperties) {
+    MyBatisAdapter(Properties appProperties) throws Exception {
+        myBatisConfig = createMyBatisConfig(appProperties);
+        sqlSessionFactory = createSessionFactory(myBatisConfig);
+    }
+
+    private Configuration createMyBatisConfig(Properties appProperties) {
         DataSource dataSource = createDataSource(appProperties);
         Environment environment = new Environment("Development", new JdbcTransactionFactory(), dataSource);
-        configuration = new Configuration(environment);
+        Configuration configuration = new Configuration(environment);
         configuration.setMapUnderscoreToCamelCase(true);
-        createSessionFactory();
+        return configuration;
     }
 
     private DataSource createDataSource(Properties appProperties) {
@@ -28,8 +36,22 @@ public class MyBatisAdapter {
         return new PooledDataSource(driver, url, username, password);
     }
 
-    private void createSessionFactory() {
+    private SqlSessionFactory createSessionFactory(Configuration myBatisConfig) {
         SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
-        sqlSessionFactory = builder.build(configuration);
+        return builder.build(myBatisConfig);
+    }
+
+    void registerMappers(ApplicationContext appContext, Set<Class<?>> classesSet) throws Exception {
+        for (Class<?> clazz : classesSet) {
+            for (Annotation a : clazz.getDeclaredAnnotations()) {
+                if (!(a instanceof Mapper))
+                    continue;
+
+                myBatisConfig.addMapper(clazz);
+                SqlSession sqlSession = sqlSessionFactory.openSession();
+                Object mapper = sqlSession.getMapper(clazz);
+                appContext.getBean(clazz, mapper);
+            }
+        }
     }
 }
