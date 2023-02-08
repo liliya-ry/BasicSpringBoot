@@ -3,7 +3,7 @@ package org.example.BlogWebApp.controllers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.example.BlogWebApp.entities.*;
 import org.example.BlogWebApp.logging.LoggingInfo;
-import org.example.SpringContainer.annotations.web.*;
+import org.example.SpringFramework.SpringContainer.annotations.web.*;
 
 import java.util.List;
 

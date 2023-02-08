@@ -2,7 +2,8 @@ package org.example.BlogWebApp.controllers;
 
 import org.example.BlogWebApp.entities.Comment;
 import org.example.BlogWebApp.mappers.CommentMapper;
-import org.example.SpringContainer.annotations.beans.*;
+import org.example.SpringFramework.SpringContainer.annotations.beans.Autowired;
+import org.example.SpringFramework.SpringContainer.annotations.beans.RestController;
 
 import java.util.List;
 

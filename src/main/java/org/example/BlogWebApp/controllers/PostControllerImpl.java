@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.BlogWebApp.entities.*;
 import org.example.BlogWebApp.exceptions.NotFoundException;
 import org.example.BlogWebApp.mappers.*;
-import org.example.SpringContainer.annotations.beans.*;
+import org.example.SpringFramework.SpringContainer.annotations.beans.Autowired;
+import org.example.SpringFramework.SpringContainer.annotations.beans.RestController;
+
 import java.util.List;
 
 

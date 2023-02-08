@@ -2,10 +2,10 @@ package org.example.BlogWebApp;
 
 import org.example.BlogWebApp.auth.AuthInterceptor;
 import org.example.BlogWebApp.logging.LoggingInterceptor;
-import org.example.SpringBoot.application.SpringApplication;
-import org.example.SpringBoot.interceptors.InterceptorRegistry;
-import org.example.SpringBoot.webMvc.WebMvcConfigurer;
-import org.example.SpringContainer.annotations.beans.*;
+import org.example.SpringFramework.SpringBoot.interceptors.InterceptorRegistry;
+import org.example.SpringFramework.SpringBoot.webMvc.WebMvcConfigurer;
+import org.example.SpringFramework.SpringContainer.annotations.beans.Autowired;
+import org.example.SpringFramework.SpringContainer.annotations.beans.Configuration;
 
 @Configuration
 public class InterceptorsConfig implements WebMvcConfigurer {

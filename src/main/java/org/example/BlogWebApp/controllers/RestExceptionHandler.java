@@ -1,7 +1,5 @@
 package org.example.BlogWebApp.controllers;
 
-import org.example.BlogWebApp.exceptions.NotFoundException;
-import org.example.SpringContainer.annotations.web.ExceptionHandler;
 import org.slf4j.*;
 
 //@ControllerAdvice

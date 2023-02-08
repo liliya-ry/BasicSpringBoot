@@ -1,8 +1,9 @@
 package org.example.BlogWebApp.logging;
 
 import jakarta.servlet.http.*;
-import org.example.SpringBoot.interceptors.*;
-import org.example.SpringContainer.annotations.beans.Component;
+import org.example.SpringFramework.SpringBoot.interceptors.HandlerInterceptor;
+import org.example.SpringFramework.SpringBoot.interceptors.HandlerMethod;
+import org.example.SpringFramework.SpringContainer.annotations.beans.Component;
 import org.slf4j.*;
 
 @Component

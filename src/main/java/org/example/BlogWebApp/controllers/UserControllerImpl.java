@@ -9,7 +9,8 @@ import org.example.BlogWebApp.auth.PasswordEncryptor;
 import org.example.BlogWebApp.entities.*;
 import org.example.BlogWebApp.exceptions.NotFoundException;
 import org.example.BlogWebApp.mappers.UserMapper;
-import org.example.SpringContainer.annotations.beans.*;
+import org.example.SpringFramework.SpringContainer.annotations.beans.Autowired;
+import org.example.SpringFramework.SpringContainer.annotations.beans.RestController;
 
 import java.util.List;
 
