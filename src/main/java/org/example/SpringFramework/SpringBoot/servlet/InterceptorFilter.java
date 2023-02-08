@@ -5,11 +5,8 @@ import static jakarta.servlet.http.HttpServletResponse.*;
 import com.google.gson.Gson;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
-import org.example.SpringBoot.interceptors.*;
-import org.example.SpringFramework.SpringBoot.interceptors.HandlerInterceptor;
-import org.example.SpringFramework.SpringBoot.interceptors.InterceptorRegistry;
-import org.example.SpringFramework.SpringBoot.servlet.errors.NotSupportedError;
-import org.example.SpringFramework.SpringBoot.servlet.errors.ServerError;
+import org.example.SpringFramework.SpringBoot.interceptors.*;
+import org.example.SpringFramework.SpringBoot.servlet.errors.*;
 import org.example.SpringFramework.SpringContainer.annotations.beans.Autowired;
 
 import java.io.*;

@@ -1,16 +1,11 @@
 package org.example.SpringFramework.SpringBoot.servlet;
 
 import org.example.SpringFramework.SpringBoot.interceptors.HandlerMethod;
-import org.example.SpringContainer.annotations.web.*;
-import org.example.SpringFramework.SpringContainer.annotations.web.PathVariable;
-import org.example.SpringFramework.SpringContainer.annotations.web.RequestBody;
-import org.example.SpringFramework.SpringContainer.annotations.web.RequestParam;
-import org.example.SpringFramework.SpringContainer.annotations.web.ResponseBody;
+import org.example.SpringFramework.SpringContainer.annotations.web.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class RequestMethod implements HandlerMethod {
     Method method;

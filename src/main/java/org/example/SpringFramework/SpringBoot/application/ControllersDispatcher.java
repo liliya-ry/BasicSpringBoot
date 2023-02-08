@@ -3,9 +3,7 @@ package org.example.SpringFramework.SpringBoot.application;
 import org.example.SpringFramework.SpringBoot.interceptors.InterceptorRegistry;
 import org.example.SpringFramework.SpringBoot.webMvc.WebMvcConfigurer;
 import org.example.SpringFramework.SpringContainer.ApplicationContext;
-import org.example.SpringContainer.annotations.beans.*;
-import org.example.SpringFramework.SpringContainer.annotations.beans.Controller;
-import org.example.SpringFramework.SpringContainer.annotations.beans.RestController;
+import org.example.SpringFramework.SpringContainer.annotations.beans.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

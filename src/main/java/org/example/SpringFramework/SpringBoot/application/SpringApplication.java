@@ -1,11 +1,7 @@
 package org.example.SpringFramework.SpringBoot.application;
 
-import org.example.SpringBoot.annotations.*;
 import org.example.SpringFramework.SpringContainer.ApplicationContext;
-import org.example.SpringContainer.annotations.beans.*;
-import org.example.SpringFramework.SpringBoot.annotations.ComponentScan;
-import org.example.SpringFramework.SpringBoot.annotations.EnableAutoConfiguration;
-import org.example.SpringFramework.SpringBoot.annotations.SpringBootApplication;
+import org.example.SpringFramework.SpringBoot.annotations.*;
 import org.example.SpringFramework.SpringContainer.annotations.beans.Configuration;
 
 import java.io.*;

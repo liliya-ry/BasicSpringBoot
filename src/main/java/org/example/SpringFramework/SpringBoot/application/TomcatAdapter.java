@@ -4,10 +4,8 @@ import jakarta.servlet.http.HttpServlet;
 import org.apache.catalina.*;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.descriptor.web.*;
-import org.example.SpringBoot.servlet.*;
 import org.example.SpringFramework.SpringContainer.ApplicationContext;
-import org.example.SpringFramework.SpringBoot.servlet.DispatcherServlet;
-import org.example.SpringFramework.SpringBoot.servlet.InterceptorFilter;
+import org.example.SpringFramework.SpringBoot.servlet.*;
 
 import java.util.Properties;
 

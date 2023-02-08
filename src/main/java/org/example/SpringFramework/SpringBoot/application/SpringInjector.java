@@ -1,11 +1,8 @@
 package org.example.SpringFramework.SpringBoot.application;
 
 import com.google.gson.*;
-import org.example.SpringContainer.*;
-import org.example.SpringContainer.annotations.beans.*;
 import org.example.SpringFramework.SpringContainer.ApplicationContext;
-import org.example.SpringFramework.SpringContainer.annotations.beans.Component;
-import org.example.SpringFramework.SpringContainer.annotations.beans.RestController;
+import org.example.SpringFramework.SpringContainer.annotations.beans.*;
 
 import java.lang.annotation.*;
 import java.util.*;
