@@ -18,8 +18,6 @@ import java.util.List;
 public class UserControllerImpl implements UserController {
     @Autowired
     private UserMapper userMapper;
-    @Autowired
-    private ObjectMapper objectMapper;
 
     public List<User> getAllUsers() {
         return userMapper.getAllUsers();
@@ -53,9 +51,8 @@ public class UserControllerImpl implements UserController {
         return username;
     }
 
-    private void throwUserException(String username, String msg) throws JsonProcessingException {
+    private void throwUserException(String username, String msg) {
         ErrorResponse errorResponse = new ErrorResponse(SC_NOT_FOUND, NO_USER_MESSAGE + username + msg);
-        String jsonError = objectMapper.writeValueAsString(errorResponse);
-        throw new NotFoundException(jsonError);
+        throw new NotFoundException(errorResponse.toString());
     }
 }

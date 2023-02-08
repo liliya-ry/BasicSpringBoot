@@ -3,13 +3,10 @@ package org.example.BlogWebApp.controllers;
 import static jakarta.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.example.BlogWebApp.entities.ErrorResponse.NO_POST_MESSAGE;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.BlogWebApp.entities.*;
 import org.example.BlogWebApp.exceptions.NotFoundException;
 import org.example.BlogWebApp.mappers.*;
-import org.example.SpringFramework.SpringContainer.annotations.beans.Autowired;
-import org.example.SpringFramework.SpringContainer.annotations.beans.RestController;
+import org.example.SpringFramework.SpringContainer.annotations.beans.*;
 
 import java.util.List;
 
@@ -20,14 +17,13 @@ public class PostControllerImpl implements PostController {
     private PostMapper postMapper;
     @Autowired
     private CommentMapper commentMapper;
-    @Autowired
-    private ObjectMapper objectMapper;
+
 
     public List<Post> getAllPosts() {
         return postMapper.getAllPosts();
     }
 
-    public Object getPostById(Integer id) throws JsonProcessingException {
+    public Object getPostById(Integer id) {
         Post post = postMapper.getPostById(id);
         if (post == null)
             throwPostException(id, "");
@@ -44,7 +40,7 @@ public class PostControllerImpl implements PostController {
         return post;
     }
 
-    public Object updatePost(Post post, Integer id) throws JsonProcessingException {
+    public Object updatePost(Post post, Integer id) {
         post.postId = id;
 
         int affectedRows = postMapper.updatePost(post);
@@ -54,16 +50,15 @@ public class PostControllerImpl implements PostController {
         return post;
     }
 
-    public Object deletePost(Integer id) throws JsonProcessingException {
+    public Object deletePost(Integer id) {
         int affectedRows = postMapper.deletePost(id);
         if (affectedRows != 1)
             throwPostException(id, " was deleted");
         return id;
     }
 
-    private void throwPostException(Integer id, String extraText) throws JsonProcessingException {
+    private void throwPostException(Integer id, String extraText) {
         ErrorResponse errorResponse = new ErrorResponse(SC_NOT_FOUND, NO_POST_MESSAGE + id + extraText);
-        String jsonError = objectMapper.writeValueAsString(errorResponse);
-        throw new NotFoundException(jsonError);
+        throw new NotFoundException(errorResponse.toString());
     }
 }

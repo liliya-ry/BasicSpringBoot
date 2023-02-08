@@ -15,21 +15,22 @@ import java.util.*;
 public class MyBatisAdapter {
     private final Configuration myBatisConfig;
     private final SqlSessionFactory sqlSessionFactory;
+    private final PooledDataSource dataSource;
 
     MyBatisAdapter(Properties appProperties) throws Exception {
-        myBatisConfig = createMyBatisConfig(appProperties);
+        dataSource = createDataSource(appProperties);
+        myBatisConfig = createMyBatisConfig();
         sqlSessionFactory = createSessionFactory(myBatisConfig);
     }
 
-    private Configuration createMyBatisConfig(Properties appProperties) {
-        DataSource dataSource = createDataSource(appProperties);
+    private Configuration createMyBatisConfig() {
         Environment environment = new Environment("Development", new JdbcTransactionFactory(), dataSource);
         Configuration configuration = new Configuration(environment);
         configuration.setMapUnderscoreToCamelCase(true);
         return configuration;
     }
 
-    private DataSource createDataSource(Properties appProperties) {
+    private PooledDataSource createDataSource(Properties appProperties) {
         String driver = appProperties.getProperty("spring.datasource.driverClassName");
         String url = appProperties.getProperty("spring.datasource.url");
         String username = appProperties.getProperty("spring.datasource.username");

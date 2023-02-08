@@ -19,19 +19,39 @@ public class SpringApplication {
             findAllClasses(packageName, CLASSES_SET);
 
         loadProperties(configurationClass.getPackageName());
+        injectSpring();
+        loadModules();
+    }
 
+    private static void configWeb() throws Exception {
+        ControllersDispatcher controllerDispatcher = new ControllersDispatcher(CLASSES_SET, APP_CONTEXT);
+        APP_CONTEXT.getBean(ControllersDispatcher.class, controllerDispatcher);
+        TomcatAdapter tomcatAdapter = new TomcatAdapter(APP_PROPERTIES, APP_CONTEXT);
+        tomcatAdapter.startServer();
+    }
+
+    private static void configMyBatis() throws Exception {
         MyBatisAdapter myBatisAdapter = new MyBatisAdapter(APP_PROPERTIES);
         myBatisAdapter.registerMappers(APP_CONTEXT, CLASSES_SET);
+    }
 
+    private static void injectSpring() throws Exception {
         SpringInjector springInjector = new SpringInjector();
         springInjector.registerGson(APP_CONTEXT);
         springInjector.allocateBeans(APP_CONTEXT, CLASSES_SET);
+    }
 
-        ControllersDispatcher controllerDispatcher = new ControllersDispatcher(CLASSES_SET, APP_CONTEXT);
-        APP_CONTEXT.getBean(ControllersDispatcher.class, controllerDispatcher);
+    private static void loadModules() throws Exception {
+        String modulesStr = APP_PROPERTIES.getProperty("spring.modules");
+        if (modulesStr == null)
+            return;
 
-        TomcatAdapter tomcatAdapter = new TomcatAdapter(APP_PROPERTIES, APP_CONTEXT);
-        tomcatAdapter.startServer();
+        Set<String> modules = Set.of(modulesStr.split(","));
+        if (modules.contains("mybatis"))
+            configMyBatis();
+
+        if (modules.contains("web"))
+            configWeb();
     }
 
     private static Set<String> findPackages(Class<?> configurationClass) {

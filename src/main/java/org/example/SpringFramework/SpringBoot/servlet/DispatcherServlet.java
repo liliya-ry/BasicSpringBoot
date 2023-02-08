@@ -30,9 +30,10 @@ public class DispatcherServlet extends HttpServlet {
             }
             resp.getWriter().write(responseToWrite);
         } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-            sendServerError(req, resp);
-            //TODO: @ControllerAdvice exceptions handling
+            sendError(resp, SC_NOT_FOUND, e.getCause().getMessage());
+        } catch (IllegalArgumentException e) {
+            Object serverError = new ServerError(req.getPathInfo());
+            sendError(resp, SC_BAD_REQUEST, serverError);
         }
     }
 
@@ -43,25 +44,46 @@ public class DispatcherServlet extends HttpServlet {
         for (int i = 0; i < paramInfos.size(); i++) {
             ParamInfo paramInfo = paramInfos.get(i);
             if (paramInfo.isPathVariable) {
-                String pathVar = (String) req.getAttribute(paramInfo.requestParamName);
-                args[i] = getRequestParam(pathVar, paramInfo.type);
+                args[i] = getPathVarValue(req, paramInfo);
                 continue;
             }
 
             if (paramInfo.isFromRequestBody) {
-                args[i] = requestMethod.toBeSerialized ?
-                          gson.fromJson(req.getReader(), paramInfo.type) :
-                          new String(req.getInputStream().readAllBytes());
+                args[i] = getRequestBodyValue(req, paramInfo, requestMethod);
                 continue;
             }
 
             if (paramInfo.requestParamName != null) {
-                String requestParam = req.getParameter(paramInfo.requestParamName);
-                args[i] = getRequestParam(requestParam, paramInfo.type);
+                args[i] = getRequestParamValue(req, paramInfo);
             }
         }
 
         return args;
+    }
+
+    private Object getRequestParamValue(HttpServletRequest req, ParamInfo paramInfo) {
+        String requestParam = req.getParameter(paramInfo.requestParamName);
+        if (requestParam == null)
+            throw new IllegalArgumentException();
+
+        return getRequestParam(requestParam, paramInfo.type);
+    }
+
+    private Object getRequestBodyValue(HttpServletRequest req, ParamInfo paramInfo, RequestMethod requestMethod) throws IOException {
+        if (!req.getContentType().equals("application/json"))
+            throw new IllegalArgumentException();
+
+        return requestMethod.toBeSerialized ?
+                  gson.fromJson(req.getReader(), paramInfo.type) :
+                  new String(req.getInputStream().readAllBytes());
+    }
+
+    private Object getPathVarValue(HttpServletRequest req, ParamInfo paramInfo) {
+        String pathVar = (String) req.getAttribute(paramInfo.requestParamName);
+        if (pathVar == null)
+            throw new IllegalArgumentException();
+
+        return getRequestParam(pathVar, paramInfo.type);
     }
 
     private Object getRequestParam(String requestParam, Class<?> paramType) {
@@ -78,15 +100,10 @@ public class DispatcherServlet extends HttpServlet {
         };
     }
 
-    private void sendServerError(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Object serverError = new ServerError(req.getPathInfo());
-        sendError(serverError, resp, SC_INTERNAL_SERVER_ERROR);
-    }
-
-    private void sendError(Object error, HttpServletResponse resp, int status) throws IOException {
+    private void sendError(HttpServletResponse resp, int status, Object error) throws IOException {
         resp.setStatus(status);
         resp.setContentType("application/json");
-        String responseToWrite = gson.toJson(error);
+        String responseToWrite = error instanceof String errorStr ? errorStr : gson.toJson(error);
         resp.getWriter().write(responseToWrite);
     }
 }

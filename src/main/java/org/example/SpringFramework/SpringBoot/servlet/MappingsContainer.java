@@ -3,7 +3,6 @@ package org.example.SpringFramework.SpringBoot.servlet;
 import org.example.SpringFramework.SpringBoot.application.ControllersDispatcher;
 import org.example.SpringFramework.SpringBoot.application.SpringApplication;
 import org.example.SpringFramework.SpringContainer.annotations.web.*;
-import org.example.SpringFramework.SpringContainer.annotations.web.RequestMethod;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -24,10 +23,7 @@ public class MappingsContainer {
             Class<?> controllerClass = getControllerClass(clazz);
             RequestMapping requestMappingAnn = controllerClass.getAnnotation(RequestMapping.class);
 
-            if (requestMappingAnn == null)
-                continue;
-
-            String controllerPath = requestMappingAnn.value();
+            String controllerPath = requestMappingAnn == null ? "" : requestMappingAnn.value();
 
             Object controller = SpringApplication.getAppContext().getBean(clazz);
             for (Method method : controllerClass.getDeclaredMethods())
@@ -36,10 +32,10 @@ public class MappingsContainer {
     }
 
     private Class<?> getControllerClass(Class<?> clazz) {
-        for (Class<?> interfaceClass : clazz.getInterfaces())
-            if (interfaceClass.getAnnotation(RequestMapping.class) != null)
+        for (Class<?> interfaceClass : clazz.getInterfaces()) {
+            if (interfaceClass.isAnnotationPresent(RequestMapping.class))
                 return interfaceClass;
-
+        }
         return clazz;
     }
 
@@ -53,17 +49,17 @@ public class MappingsContainer {
 
             PathInfo pathInfo = new PathInfo(requestPath);
             pathInfos.add(pathInfo);
-            org.example.SpringFramework.SpringBoot.servlet.RequestMethod requestMethod = new org.example.SpringFramework.SpringBoot.servlet.RequestMethod(method, instance, isRestController, pathInfo.getMethodType());
+            RequestMethod requestMethod = new RequestMethod(method, instance, isRestController, pathInfo.getMethodType());
             requestMethods.add(requestMethod);
         }
     }
 
     private String getRequestPath(String controllerPath, Annotation annotation, String annType) {
         return switch (annType) {
-            case "GetMapping" -> RequestMethod.GET + controllerPath + ((GetMapping) annotation).value();
-            case "PostMapping" -> RequestMethod.POST + controllerPath +((PostMapping) annotation).value();
-            case "PutMapping" -> RequestMethod.PUT + controllerPath + ((PutMapping) annotation).value();
-            case "DeleteMapping" -> RequestMethod.DELETE + controllerPath + ((DeleteMapping) annotation).value();
+            case "GetMapping" -> "GET" + controllerPath + ((GetMapping) annotation).value();
+            case "PostMapping" -> "POST" + controllerPath +((PostMapping) annotation).value();
+            case "PutMapping" -> "PUT" + controllerPath + ((PutMapping) annotation).value();
+            case "DeleteMapping" -> "DELETE" + controllerPath + ((DeleteMapping) annotation).value();
             case "RequestMapping" -> ((RequestMapping) annotation).method() + controllerPath + ((RequestMapping) annotation).value();
             default -> null;
         };
