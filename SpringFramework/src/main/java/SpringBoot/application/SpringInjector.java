@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 import java.util.*;
 
 public class SpringInjector {
-    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, RestController.class, Controller.class);
+    private static final Set<Class<?>> BEAN_TYPES = Set.of(Component.class, RestController.class, Controller.class, Configuration.class);
 
     private final ApplicationContext appContext;
 

@@ -27,7 +27,7 @@
     <build>
         <resources>
             <resource>
-                <directory>src/resource</directory>
+                <directory>src/resources</directory>
             </resource>
         </resources>
 
@@ -69,6 +69,7 @@
                 <configuration>
                     <source>18</source>
                     <target>18</target>
+                    <compilerArgs>-parameters</compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

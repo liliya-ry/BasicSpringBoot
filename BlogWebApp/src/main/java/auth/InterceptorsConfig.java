@@ -1,3 +1,5 @@
+package auth;
+
 import SpringBoot.interceptors.InterceptorRegistry;
 import SpringBoot.webMvc.WebMvcConfigurer;
 import SpringContainer.annotations.beans.*;
